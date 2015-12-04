@@ -13,12 +13,13 @@
 #include <SBGC.h>
 #include <SBGC_Arduino.h>
 #define SERIAL_SPEED 115200  // Default is 115200
-#define REALTIME_DATA_REQUEST_INTERAL_MS 400 // interval between reatime data requests
+#define REALTIME_DATA_REQUEST_INTERAL_MS 50 // interval between reatime data requests
 
 static SBGC_cmd_realtime_data_t rt_data;
 static uint16_t cur_time_ms, last_cmd_time_ms, rt_req_last_time_ms;
 static int16_t debug1, debug2, debug3, debug4, free_memory;
 static float gimbal_pitch, up_lidar;
+unsigned long pulse_width;
 
  
 HardwareSerial &serial = Serial1;
@@ -46,6 +47,12 @@ void setup(){
   I2c.timeOut(50); // Sets a timeout to ensure no locking up of sketch if I2C communication fails
   //ENDLIDAR
 
+  //LIDAR2
+  pinMode(2, OUTPUT); // Set pin 2 as trigger pin
+  pinMode(3, INPUT); // Set pin 3 as monitor pin
+  digitalWrite(2, LOW); // Set trigger LOW for continuous read
+  //LIDAR2
+
   gimbal_pitch = 0.0;
   up_lidar = 0.0;
 }
@@ -68,9 +75,20 @@ void loop(){
  
     rt_req_last_time_ms = cur_time_ms;
 
+    
+    //LIDAR2
+    pulse_width = pulseIn(3, HIGH); // Count how long the pulse is high in microseconds
+    if(pulse_width != 0){ // If we get a reading that isn't zero, let's print it
+        pulse_width = pulse_width/10; // 10usec = 1 cm of distance for LIDAR-Lite
     Serial.print(gimbal_pitch);
     Serial.print(",");
-    Serial.println(up_lidar);
+    Serial.print(up_lidar);
+    Serial.print(",");
+    Serial.println(pulse_width); // Print the distance
+    }
+    //LIDAR2
+
+   
     
   }
     
