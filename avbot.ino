@@ -13,12 +13,12 @@
 #include <SBGC.h>
 #include <SBGC_Arduino.h>
 #define SERIAL_SPEED 115200  // Default is 115200
-#define REALTIME_DATA_REQUEST_INTERAL_MS 50 // interval between reatime data requests
+#define REALTIME_DATA_REQUEST_INTERAL_MS 200 // interval between reatime data requests
 
 static SBGC_cmd_realtime_data_t rt_data;
 static uint16_t cur_time_ms, last_cmd_time_ms, rt_req_last_time_ms;
 static int16_t debug1, debug2, debug3, debug4, free_memory;
-static float gimbal_pitch, up_lidar;
+static float gimbal_pitch,gimbal_yaw, up_lidar, frame_roll, frame_pitch, frame_yaw;
 unsigned long pulse_width;
 
  
@@ -32,6 +32,7 @@ HardwareSerial &serial = Serial1;
 
 
 void setup(){
+
   //ALEXMOS
   serial.begin(SERIAL_SPEED);
   Serial.begin(SERIAL_SPEED);
@@ -54,11 +55,14 @@ void setup(){
   //LIDAR2
 
   gimbal_pitch = 0.0;
+  gimbal_yaw = 0.0;
   up_lidar = 0.0;
 }
 
 
 void loop(){  
+
+   
     //ALEXMOS
   cur_time_ms = millis();
  
@@ -68,11 +72,11 @@ void loop(){
   if ((cur_time_ms - rt_req_last_time_ms) > REALTIME_DATA_REQUEST_INTERAL_MS) {
     lidar_pub();
     
-    //Serial.println("LOOP");
+   // Serial.println("LOOP");
     SerialCommand cmd;
+   
     cmd.init(SBGC_CMD_REALTIME_DATA_4);
     sbgc_parser.send_cmd(cmd, 0);
- 
     rt_req_last_time_ms = cur_time_ms;
 
     
@@ -82,12 +86,16 @@ void loop(){
         pulse_width = pulse_width/10; // 10usec = 1 cm of distance for LIDAR-Lite
     Serial.print(gimbal_pitch);
     Serial.print(",");
+    Serial.print(gimbal_yaw);
+    Serial.print(",");
     Serial.print(up_lidar);
     Serial.print(",");
     Serial.println(pulse_width); // Print the distance
+  
+    
     }
     //LIDAR2
-
+   
    
     
   }
@@ -125,7 +133,7 @@ void lidar_pub() {
  // Serial.println("lidarpub()");
   int distance = (distanceArray[0] << 8) + distanceArray[1];  // Shift high byte [0] 8 to the left and add low byte [1] to create 16-bit int
   
-  //Serial.println(distance); 
+   //Serial.println(distance); 
    up_lidar = distance;
 }
 
@@ -135,7 +143,6 @@ void process_in_queue() {
   
   
   while (sbgc_parser.read_cmd()) {
-   // Serial.println("PROCESS IN Q");
     SerialCommand &cmd = sbgc_parser.in_cmd;
     last_cmd_time_ms = cur_time_ms;
  
@@ -151,11 +158,14 @@ void process_in_queue() {
           //Serial.println("Roll / Pitch / Yaw:");
  
         //  Serial.print(rt_data.imu_angle[ROLL]);
-        //  Serial.print(" ALEXMOS ");
-        //  Serial.print(rt_data.imu_angle[PITCH]);
+        //  Serial.println(" ALEXIMU -  ");
+         // Serial.print(rt_data.frame_imu_angle[PITCH]);
         //  Serial.print(" / ");
         //  Serial.println(rt_data.imu_angle[YAW]);
           gimbal_pitch = rt_data.imu_angle[PITCH];
+          gimbal_yaw = rt_data.imu_angle[YAW];
+         
+          
         } else {
           sbgc_parser.onParseError(error);
         }
