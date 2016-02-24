@@ -81,6 +81,7 @@ void loop(){
 
     
     //LIDAR2
+    
     pulse_width = pulseIn(3, HIGH); // Count how long the pulse is high in microseconds
     if(pulse_width != 0){ // If we get a reading that isn't zero, let's print it
         pulse_width = pulse_width/10; // 10usec = 1 cm of distance for LIDAR-Lite
@@ -94,6 +95,11 @@ void loop(){
   
     
     }
+    
+   
+    
+    //TEST
+        
     //LIDAR2
    
    
